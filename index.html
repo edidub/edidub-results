@@ -21,7 +21,7 @@
   </style>
 </head>
 <body>
-  <h1>Visual Dubbing Results</h1>
+  <h1>EdiDub: Visual Dubbing Results</h1>
 
   <label for="benchmark">Benchmark:</label>
   <select id="benchmark" onchange="updateVideoList()"></select>
@@ -34,13 +34,13 @@
     <button onclick="nextVideo()">Next</button>
   </div>
 
-  <video id="videoPlayer" width="1024" controls>
+  <video id="videoPlayer" width="1024" controls muted loop>
     Your browser does not support the video tag.
   </video>
 
   <script>
     let videos = {};
-    let currentBenchmark = "Vox2-Occluded";
+    let currentBenchmark = "";
     let currentIndex = 0;
 
     async function fetchVideoData() {
@@ -50,6 +50,7 @@
       const benchmarkSelect = document.getElementById("benchmark");
       benchmarkSelect.innerHTML = "";
 
+      // Reverse order of benchmarks
       for (let benchmark of Object.keys(videos).reverse()) {
         const option = document.createElement("option");
         option.value = benchmark;
@@ -86,7 +87,6 @@
       videoPlayer.src = videoPath;
       document.getElementById("videoSelect").value = currentIndex;
 
-      // Autoplay once metadata is loaded
       videoPlayer.load();
       videoPlayer.onloadeddata = () => {
         videoPlayer.play();
@@ -108,13 +108,56 @@
       loadVideo();
     }
 
+    // Keyboard navigation and spacebar toggle
     document.addEventListener("keydown", (event) => {
       const key = event.key;
-      if (key === "ArrowRight" || key === "ArrowDown") {
+      const videoPlayer = document.getElementById("videoPlayer");
+
+      if (key === " " || key === "Spacebar") {
+        event.preventDefault();
+        if (videoPlayer.paused) {
+          videoPlayer.play();
+        } else {
+          videoPlayer.pause();
+        }
+      } else if (key === "ArrowRight" || key === "ArrowDown") {
         nextVideo();
       } else if (key === "ArrowLeft" || key === "ArrowUp") {
         prevVideo();
       }
+    });
+
+    // Mobile tap to toggle play/pause
+    const videoPlayer = document.getElementById("videoPlayer");
+    videoPlayer.addEventListener("click", () => {
+      if (videoPlayer.paused) {
+        videoPlayer.play();
+      } else {
+        videoPlayer.pause();
+      }
+    });
+
+    // Mobile swipe left/right
+    let touchStartX = null;
+    videoPlayer.addEventListener("touchstart", (e) => {
+      touchStartX = e.changedTouches[0].screenX;
+    });
+
+    videoPlayer.addEventListener("touchend", (e) => {
+      if (touchStartX === null) return;
+
+      let touchEndX = e.changedTouches[0].screenX;
+      let diff = touchEndX - touchStartX;
+
+      if (Math.abs(diff) > 50) {
+        if (diff < 0) {
+          nextVideo(); // Swipe left
+        } else {
+          prevVideo(); // Swipe right
+        }
+      }
+
+      touchStartX = null;
     });
 
     window.onload = fetchVideoData;
