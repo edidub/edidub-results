@@ -34,13 +34,13 @@
     <button onclick="nextVideo()">Next</button>
   </div>
 
-  <video id="videoPlayer" width="640" controls>
+  <video id="videoPlayer" width="1024" controls>
     Your browser does not support the video tag.
   </video>
 
   <script>
     let videos = {};
-    let currentBenchmark = "";
+    let currentBenchmark = "Vox2-Occluded";
     let currentIndex = 0;
 
     async function fetchVideoData() {
@@ -50,7 +50,7 @@
       const benchmarkSelect = document.getElementById("benchmark");
       benchmarkSelect.innerHTML = "";
 
-      for (let benchmark of Object.keys(videos)) {
+      for (let benchmark of Object.keys(videos).reverse()) {
         const option = document.createElement("option");
         option.value = benchmark;
         option.textContent = benchmark;
@@ -85,6 +85,12 @@
       const videoPath = `videos/${currentBenchmark}/${videoName}`;
       videoPlayer.src = videoPath;
       document.getElementById("videoSelect").value = currentIndex;
+
+      // Autoplay once metadata is loaded
+      videoPlayer.load();
+      videoPlayer.onloadeddata = () => {
+        videoPlayer.play();
+      };
     }
 
     function loadSelectedVideo() {
