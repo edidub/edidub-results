@@ -2,21 +2,107 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Anonymous Results</title>
+  <title>Anonymous Results Viewer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    select, button {
+      margin: 10px;
+      padding: 5px 10px;
+      font-size: 16px;
+    }
+    video {
+      display: block;
+      margin-top: 20px;
+      max-width: 100%;
+    }
+  </style>
 </head>
 <body>
   <h1>Visual Dubbing Results</h1>
 
-  <h3>Example 1</h3>
-  <video width="320" controls>
-    <source src="videos/example1.mp4" type="video/mp4">
+  <label for="benchmark">Benchmark:</label>
+  <select id="benchmark" onchange="updateVideoList()"></select>
+
+  <label for="videoSelect">Video:</label>
+  <select id="videoSelect" onchange="loadSelectedVideo()"></select>
+
+  <div>
+    <button onclick="prevVideo()">Previous</button>
+    <button onclick="nextVideo()">Next</button>
+  </div>
+
+  <video id="videoPlayer" width="640" controls>
     Your browser does not support the video tag.
   </video>
 
-  <h3>Example 2</h3>
-  <video width="320" controls>
-    <source src="videos/example2.mp4" type="video/mp4">
-    Your browser does not support the video tag.
-  </video>
+  <script>
+    let videos = {};
+    let currentBenchmark = "";
+    let currentIndex = 0;
+
+    async function fetchVideoData() {
+      const res = await fetch("videos.json");
+      videos = await res.json();
+
+      const benchmarkSelect = document.getElementById("benchmark");
+      benchmarkSelect.innerHTML = "";
+
+      for (let benchmark of Object.keys(videos)) {
+        const option = document.createElement("option");
+        option.value = benchmark;
+        option.textContent = benchmark;
+        benchmarkSelect.appendChild(option);
+      }
+
+      currentBenchmark = benchmarkSelect.value;
+      updateVideoList();
+    }
+
+    function updateVideoList() {
+      const benchmarkSelect = document.getElementById("benchmark");
+      currentBenchmark = benchmarkSelect.value;
+      const videoList = videos[currentBenchmark];
+      const videoSelect = document.getElementById("videoSelect");
+
+      videoSelect.innerHTML = "";
+      videoList.forEach((video, index) => {
+        const option = document.createElement("option");
+        option.value = index;
+        option.text = video;
+        videoSelect.appendChild(option);
+      });
+
+      currentIndex = 0;
+      loadVideo();
+    }
+
+    function loadVideo() {
+      const videoPlayer = document.getElementById("videoPlayer");
+      const videoName = videos[currentBenchmark][currentIndex];
+      const videoPath = `videos/${currentBenchmark}/${videoName}`;
+      videoPlayer.src = videoPath;
+      document.getElementById("videoSelect").value = currentIndex;
+    }
+
+    function loadSelectedVideo() {
+      currentIndex = parseInt(document.getElementById("videoSelect").value);
+      loadVideo();
+    }
+
+    function nextVideo() {
+      currentIndex = (currentIndex + 1) % videos[currentBenchmark].length;
+      loadVideo();
+    }
+
+    function prevVideo() {
+      currentIndex = (currentIndex - 1 + videos[currentBenchmark].length) % videos[currentBenchmark].length;
+      loadVideo();
+    }
+
+    window.onload = fetchVideoData;
+  </script>
 </body>
 </html>
